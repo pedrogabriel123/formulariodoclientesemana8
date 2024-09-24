@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import produtosDataSet from '../datasets/Produto';
+import { useEffect, useState } from 'react';
 import ComprasTable from '../components/ComprasTable';
 import { Button, Form, Modal } from 'react-bootstrap';
 import * as Yup from 'yup';
@@ -11,7 +10,7 @@ const CardapioYupFormik = () => {
     descricao: Yup.string().trim().min(1).max(20).required(),
   });
 
-  let [produtos, setProdutos] = useState([...produtosDataSet]);
+  let [produtos, setProdutos] = useState([]);
 
   const [show, setShow] = useState(false);
 
@@ -24,15 +23,44 @@ const CardapioYupFormik = () => {
     imagemUrl: '',
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    console.log('Carregando produtos!');
+    fetch('http://localhost:3000/produtos', { method: 'GET' })
+      .then((res) => {
+        res.json().then((data) => {
+          setProdutos([...data]);
+        });
+      })
+      .catch((error) => {});
+  }, []);
 
+  useEffect(() => {
+    console.log('Modifiquei o produto!');
+  }, [produtos]);
+
+  const handleSubmit = (values) => {
     // Enviar dados para a tabela.
-    let novoProduto = { ...formData };
-    setProdutos([...produtos, novoProduto]);
+    let novoProduto = { ...values };
 
-    // Fechar modal.
-    setShow(false);
+    // Enviar os dados para o servidor de backend.
+    fetch('http://localhost:3000/produtos', {
+      method: 'POST',
+      body: JSON.stringify(novoProduto),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        console.log('Cadastro efetuado com sucesso!');
+
+        setProdutos([...produtos, novoProduto]);
+
+        // Fechar modal.
+        setShow(false);
+      })
+      .catch((error) => {
+        console.log('Problemas a vista!');
+      });
   };
 
   const formik = useFormik({
